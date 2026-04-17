@@ -1,0 +1,438 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PotHole Finder — Admin Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --or:#E8510A;--or-dk:#C94408;--or-lt:#FEF0E8;
+  --bg:#F4F2EE;--surface:#FFFFFF;--border:#E5E2DA;
+  --text:#1C1B18;--muted:#7A7770;--hint:#B0ADA7;
+  --success:#0A6E3F;--suc-bg:#ECFDF5;
+  --danger:#991B1B;--dan-bg:#FEF2F2;
+  --warn:#92400E;--warn-bg:#FFFBEB;
+  --info:#1D4ED8;--inf-bg:#EFF6FF;
+  --sidebar:220px;--radius:10px;--radius-sm:7px;
+}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px}
+
+/* LOGIN */
+#login-screen{display:flex;align-items:center;justify-content:center;min-height:100vh;background:var(--bg)}
+.login-card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:36px 32px;width:100%;max-width:380px;box-shadow:0 4px 24px rgba(0,0,0,0.06)}
+.login-logo{width:48px;height:48px;background:var(--or);border-radius:12px;display:flex;align-items:center;justify-content:center;margin:0 auto 16px}
+.login-card h1{font-size:20px;font-weight:600;text-align:center;margin-bottom:4px}
+.login-card p{font-size:13px;color:var(--muted);text-align:center;margin-bottom:24px}
+.field{margin-bottom:14px}
+.field label{font-size:13px;font-weight:500;display:block;margin-bottom:5px}
+input{width:100%;padding:10px 13px;font-size:14px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-family:inherit;outline:none;transition:border-color 0.2s}
+input:focus{border-color:var(--or);box-shadow:0 0 0 3px rgba(232,81,10,0.1)}
+.btn{width:100%;padding:11px;background:var(--or);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:600;cursor:pointer;transition:background 0.2s}
+.btn:hover{background:var(--or-dk)}
+.btn:disabled{opacity:0.5;cursor:not-allowed}
+.login-err{color:var(--danger);font-size:12.5px;text-align:center;margin-top:10px;display:none}
+
+/* LAYOUT */
+#app-screen{display:none;height:100vh;overflow:hidden}
+.layout{display:flex;height:100%}
+
+/* SIDEBAR */
+.sidebar{width:var(--sidebar);background:var(--surface);border-right:1px solid var(--border);display:flex;flex-direction:column;flex-shrink:0}
+.sidebar-head{padding:18px 16px;border-bottom:1px solid var(--border)}
+.sidebar-logo{display:flex;align-items:center;gap:10px;margin-bottom:2px}
+.sidebar-logo-icon{width:32px;height:32px;background:var(--or);border-radius:8px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.sidebar-logo span{font-size:14px;font-weight:600;letter-spacing:-0.2px}
+.sidebar-sub{font-size:11px;color:var(--muted);margin-top:2px}
+.nav{padding:12px 10px;flex:1}
+.nav-item{display:flex;align-items:center;gap:9px;padding:9px 10px;border-radius:var(--radius-sm);cursor:pointer;font-size:13.5px;font-weight:500;color:var(--muted);margin-bottom:2px;transition:all 0.15s}
+.nav-item:hover{background:var(--bg);color:var(--text)}
+.nav-item.active{background:var(--or-lt);color:var(--or)}
+.nav-item svg{flex-shrink:0}
+.sidebar-foot{padding:14px 16px;border-top:1px solid var(--border)}
+.admin-badge{display:flex;align-items:center;gap:8px}
+.admin-avatar{width:30px;height:30px;background:var(--or);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:12px;font-weight:600}
+.admin-info{flex:1;min-width:0}
+.admin-name{font-size:13px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.logout-btn{padding:4px 10px;border:1px solid var(--border);border-radius:6px;font-size:11px;cursor:pointer;background:transparent;color:var(--muted);transition:all 0.15s}
+.logout-btn:hover{background:var(--dan-bg);color:var(--danger);border-color:#FCA5A5}
+
+/* MAIN */
+.main{flex:1;overflow-y:auto;display:flex;flex-direction:column;min-width:0}
+.topbar{padding:14px 24px;border-bottom:1px solid var(--border);background:var(--surface);display:flex;align-items:center;justify-content:space-between;flex-shrink:0}
+.topbar h2{font-size:16px;font-weight:600}
+.topbar-actions{display:flex;align-items:center;gap:10px}
+.content{padding:24px;flex:1}
+
+/* PANELS */
+.panel{display:none}.panel.active{display:block}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-bottom:24px}
+.scard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px}
+.scard-label{font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.6px;margin-bottom:6px}
+.scard-num{font-size:28px;font-weight:600;font-family:'Space Grotesk',sans-serif;line-height:1}
+.scard-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.scard.accent .scard-num{color:var(--or)}
+.scard.danger .scard-num{color:var(--danger)}
+.scard.success .scard-num{color:var(--success)}
+
+/* TABLE */
+.table-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.table-header{padding:14px 18px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:10px;flex-wrap:wrap}
+.table-header h3{font-size:14px;font-weight:600;flex:1}
+.search-box{padding:8px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none;font-family:inherit;width:220px}
+.search-box:focus{border-color:var(--or)}
+.filter-sel{padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;outline:none;font-family:inherit;background:var(--surface);cursor:pointer}
+.filter-sel:focus{border-color:var(--or)}
+table{width:100%;border-collapse:collapse}
+thead{background:var(--bg)}
+th{padding:10px 16px;text-align:left;font-size:11px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;border-bottom:1px solid var(--border);white-space:nowrap}
+td{padding:12px 16px;border-bottom:1px solid var(--border);vertical-align:top;font-size:13px}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:#FAFAF8}
+.badge{display:inline-block;padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:600;white-space:nowrap}
+.badge.high{background:var(--dan-bg);color:var(--danger)}
+.badge.medium{background:#FFEDD5;color:#9A3412}
+.badge.low{background:var(--warn-bg);color:var(--warn)}
+.badge.pending{background:#F1F0ED;color:var(--muted)}
+.badge.in_progress{background:var(--inf-bg);color:var(--info)}
+.badge.resolved{background:var(--suc-bg);color:var(--success)}
+.badge.verified{background:#F0FDF4;color:#166534}
+.ref-code{font-family:'Space Grotesk',monospace;font-size:11.5px;font-weight:600;color:var(--or)}
+.landmark-cell{font-size:12px;color:var(--muted)}
+.coords-cell{font-family:'Space Grotesk',monospace;font-size:11px;color:var(--hint)}
+.action-btn{padding:5px 12px;border:1px solid var(--border);border-radius:6px;font-size:12px;cursor:pointer;background:transparent;font-family:inherit;transition:all 0.15s;margin-right:4px;font-weight:500}
+.action-btn:hover{background:var(--bg)}
+.action-btn.primary{background:var(--or);color:#fff;border-color:var(--or)}
+.action-btn.primary:hover{background:var(--or-dk)}
+.action-btn.danger{color:var(--danger)}
+.action-btn.danger:hover{background:var(--dan-bg);border-color:#FCA5A5}
+.thumb{width:48px;height:36px;border-radius:5px;object-fit:cover;background:var(--bg);display:block}
+.no-photo{width:48px;height:36px;border-radius:5px;background:var(--bg);display:flex;align-items:center;justify-content:center}
+.pagination{padding:12px 18px;border-top:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;font-size:12.5px;color:var(--muted)}
+
+/* MODAL */
+.modal-overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:1000;align-items:center;justify-content:center}
+.modal-overlay.open{display:flex}
+.modal{background:var(--surface);border-radius:14px;padding:24px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,0.15)}
+.modal h3{font-size:16px;font-weight:600;margin-bottom:16px}
+.modal-field{margin-bottom:14px}
+.modal-field label{font-size:12px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.5px;display:block;margin-bottom:5px}
+.modal-field .val{font-size:14px;color:var(--text);line-height:1.5}
+.modal-field textarea{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;outline:none;min-height:80px;resize:vertical}
+.modal-field textarea:focus{border-color:var(--or)}
+.modal-field select{width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:inherit;outline:none;background:var(--surface);cursor:pointer}
+.modal-field select:focus{border-color:var(--or)}
+.modal-actions{display:flex;gap:8px;justify-content:flex-end;margin-top:20px}
+.modal-photo{width:100%;border-radius:var(--radius-sm);margin-bottom:14px;max-height:220px;object-fit:cover}
+.modal .check-row{display:flex;align-items:center;gap:8px;margin-top:6px}
+.modal .check-row input[type=checkbox]{width:16px;height:16px;accent-color:var(--or);cursor:pointer}
+.modal .check-row label{font-size:13px;font-weight:500;cursor:pointer}
+.map-link{display:inline-flex;align-items:center;gap:4px;font-size:12px;color:var(--info);text-decoration:none;margin-top:4px}
+.map-link:hover{text-decoration:underline}
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="login-screen">
+  <div class="login-card">
+    <div class="login-logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 14 8 14s8-8.6 8-14a8 8 0 0 0-8-8z"/></svg>
+    </div>
+    <h1>Admin Panel</h1>
+    <p>PotHole Finder — Road Monitoring</p>
+    <div class="field"><label>Username</label><input type="text" id="login-user" placeholder="admin" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <div class="field"><label>Password</label><input type="password" id="login-pass" placeholder="••••••••" onkeydown="if(event.key==='Enter')doLogin()"></div>
+    <button class="btn" id="login-btn" onclick="doLogin()">Sign In</button>
+    <div class="login-err" id="login-err">Invalid username or password.</div>
+  </div>
+</div>
+
+<!-- APP -->
+<div id="app-screen">
+  <div class="layout">
+    <!-- SIDEBAR -->
+    <div class="sidebar">
+      <div class="sidebar-head">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-icon"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 14 8 14s8-8.6 8-14a8 8 0 0 0-8-8z"/></svg></div>
+          <span>PotHole Finder</span>
+        </div>
+        <div class="sidebar-sub">Admin Portal</div>
+      </div>
+      <nav class="nav">
+        <div class="nav-item active" onclick="switchPanel('reports')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+          All Reports
+        </div>
+        <div class="nav-item" onclick="switchPanel('pending')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><polyline points="12 6 12 12 16 14"/></svg>
+          Pending
+          <span id="pending-count" style="margin-left:auto;background:var(--or);color:#fff;border-radius:20px;padding:1px 7px;font-size:10px;font-weight:600"></span>
+        </div>
+        <div class="nav-item" onclick="switchPanel('severe')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          Severe
+        </div>
+        <div class="nav-item" onclick="switchPanel('resolved')">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg>
+          Resolved
+        </div>
+      </nav>
+      <div class="sidebar-foot">
+        <div class="admin-badge">
+          <div class="admin-avatar" id="admin-initial">A</div>
+          <div class="admin-info"><div class="admin-name" id="admin-name">Admin</div></div>
+          <button class="logout-btn" onclick="logout()">Out</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- MAIN -->
+    <div class="main">
+      <div class="topbar">
+        <h2 id="panel-title">All Reports</h2>
+        <div class="topbar-actions">
+          <button class="action-btn" onclick="loadData()">⟳ Refresh</button>
+          <a href="/" class="action-btn" style="text-decoration:none">View Public Site ↗</a>
+        </div>
+      </div>
+      <div class="content">
+        <!-- STATS ROW -->
+        <div class="stats-grid" id="stats-row">
+          <div class="scard accent"><div class="scard-label">Total</div><div class="scard-num" id="st-total">—</div></div>
+          <div class="scard danger"><div class="scard-label">Pending</div><div class="scard-num" id="st-pending">—</div></div>
+          <div class="scard"><div class="scard-label">In Progress</div><div class="scard-num" id="st-inprog">—</div></div>
+          <div class="scard success"><div class="scard-label">Resolved</div><div class="scard-num" id="st-resolved">—</div></div>
+        </div>
+
+        <!-- TABLE -->
+        <div class="table-card">
+          <div class="table-header">
+            <h3 id="table-title">All Reports</h3>
+            <input type="text" class="search-box" placeholder="Search address, landmark, code..." id="search-box" oninput="debounceSearch()">
+            <select class="filter-sel" id="sev-filter" onchange="loadData()">
+              <option value="">All severity</option>
+              <option value="high">Severe</option>
+              <option value="medium">Moderate</option>
+              <option value="low">Minor</option>
+            </select>
+            <select class="filter-sel" id="stat-filter" onchange="loadData()">
+              <option value="">All status</option>
+              <option value="pending">Pending</option>
+              <option value="in_progress">In Progress</option>
+              <option value="resolved">Resolved</option>
+            </select>
+          </div>
+          <div style="overflow-x:auto">
+            <table>
+              <thead><tr>
+                <th>Photo</th><th>Ref Code</th><th>Address / Landmark</th>
+                <th>Severity</th><th>Status</th><th>GPS</th><th>Reporter</th><th>Date</th><th>Actions</th>
+              </tr></thead>
+              <tbody id="table-body"><tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted)">Loading...</td></tr></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <div id="pagination-info">—</div>
+            <div style="display:flex;gap:6px">
+              <button class="action-btn" id="prev-btn" onclick="changePage(-1)" disabled>← Prev</button>
+              <button class="action-btn" id="next-btn" onclick="changePage(1)">Next →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal" id="modal-content"></div>
+</div>
+
+<script>
+const API = '';
+let token = sessionStorage.getItem('ph_admin_token') || '';
+let adminName = sessionStorage.getItem('ph_admin_name') || '';
+let curFilter = {status:'',severity:'',search:''};
+let page = 0; const PAGE = 20;
+let allData = [];
+let searchTimer = null;
+const SEV_L={low:'Minor',medium:'Moderate',high:'Severe'};
+const STAT_L={pending:'Pending',in_progress:'In Progress',resolved:'Resolved'};
+
+if(token) showApp();
+
+async function doLogin() {
+  const btn=document.getElementById('login-btn');
+  const err=document.getElementById('login-err');
+  btn.disabled=true; btn.textContent='Signing in...'; err.style.display='none';
+  try {
+    const res = await fetch(API+'/api/admin/login',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({username:document.getElementById('login-user').value,password:document.getElementById('login-pass').value})});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.detail||'Login failed');
+    token=data.access_token; adminName=data.full_name;
+    sessionStorage.setItem('ph_admin_token',token);
+    sessionStorage.setItem('ph_admin_name',adminName);
+    showApp();
+  } catch(e) { err.textContent=e.message; err.style.display='block'; }
+  finally { btn.disabled=false; btn.textContent='Sign In'; }
+}
+
+function showApp() {
+  document.getElementById('login-screen').style.display='none';
+  document.getElementById('app-screen').style.display='block';
+  document.getElementById('admin-name').textContent=adminName;
+  document.getElementById('admin-initial').textContent=(adminName||'A')[0].toUpperCase();
+  loadData(); loadStats();
+}
+
+function logout() { token=''; sessionStorage.clear(); location.reload(); }
+
+function switchPanel(p) {
+  document.querySelectorAll('.nav-item').forEach(el=>el.classList.remove('active'));
+  event.currentTarget.classList.add('active');
+  const titles={reports:'All Reports',pending:'Pending Reports',severe:'Severe Reports',resolved:'Resolved Reports'};
+  document.getElementById('panel-title').textContent=titles[p]||'Reports';
+  document.getElementById('table-title').textContent=titles[p]||'Reports';
+  document.getElementById('stat-filter').value = p==='pending'?'pending':p==='resolved'?'resolved':'';
+  document.getElementById('sev-filter').value = p==='severe'?'high':'';
+  page=0; loadData();
+}
+
+async function loadData() {
+  const tbody=document.getElementById('table-body');
+  tbody.innerHTML='<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted)">Loading...</td></tr>';
+  const sev=document.getElementById('sev-filter').value;
+  const stat=document.getElementById('stat-filter').value;
+  const search=document.getElementById('search-box').value.trim();
+  let url=`${API}/api/admin/reports?limit=200`;
+  if(sev) url+=`&severity=${sev}`;
+  if(stat) url+=`&status=${stat}`;
+  if(search) url+=`&search=${encodeURIComponent(search)}`;
+  try {
+    const res=await fetch(url,{headers:{Authorization:`Bearer ${token}`}});
+    if(res.status===401){logout();return;}
+    allData=await res.json();
+    renderTable();
+  } catch(e) { tbody.innerHTML=`<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--danger)">Failed to load.</td></tr>`; }
+}
+
+async function loadStats() {
+  try {
+    const res=await fetch(API+'/api/stats');
+    const s=await res.json();
+    document.getElementById('st-total').textContent=s.total;
+    document.getElementById('st-pending').textContent=s.pending;
+    document.getElementById('st-inprog').textContent=s.in_progress;
+    document.getElementById('st-resolved').textContent=s.resolved;
+    const pc=document.getElementById('pending-count');
+    pc.textContent=s.pending||'';
+    pc.style.display=s.pending?'inline':'none';
+  } catch(e){}
+}
+
+function renderTable() {
+  const start=page*PAGE; const slice=allData.slice(start,start+PAGE);
+  const info=document.getElementById('pagination-info');
+  info.textContent=`${start+1}–${Math.min(start+PAGE,allData.length)} of ${allData.length}`;
+  document.getElementById('prev-btn').disabled=page===0;
+  document.getElementById('next-btn').disabled=start+PAGE>=allData.length;
+  if(!slice.length){
+    document.getElementById('table-body').innerHTML='<tr><td colspan="9" style="text-align:center;padding:32px;color:var(--muted)">No reports found</td></tr>';
+    return;
+  }
+  document.getElementById('table-body').innerHTML=slice.map(r=>`
+    <tr>
+      <td>${r.photo_path?`<img class="thumb" src="/uploads/${r.photo_path}" alt="">`:`<div class="no-photo"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#ccc" stroke-width="1.5"><rect x="3" y="8" width="18" height="13" rx="2"/><circle cx="12" cy="14" r="2.5"/></svg></div>`}</td>
+      <td><span class="ref-code">${r.ref_code}</span></td>
+      <td>
+        <div style="font-weight:500;font-size:13px;max-width:200px">${r.address}</div>
+        ${r.landmark?`<div class="landmark-cell">📍 ${r.landmark}</div>`:''}
+      </td>
+      <td><span class="badge ${r.severity}">${SEV_L[r.severity]}</span></td>
+      <td><span class="badge ${r.status}">${STAT_L[r.status]}</span>${r.is_verified?'<br><span class="badge verified" style="margin-top:3px;display:inline-block">✓ Verified</span>':''}</td>
+      <td class="coords-cell">${r.latitude?`${parseFloat(r.latitude).toFixed(4)},<br>${parseFloat(r.longitude).toFixed(4)}`:'—'}</td>
+      <td style="font-size:12px">${r.reporter_name}${r.reporter_contact?`<br><span style="color:var(--muted)">${r.reporter_contact}</span>`:''}</td>
+      <td style="font-size:11.5px;color:var(--muted);white-space:nowrap">${new Date(r.created_at+'Z').toLocaleDateString('en-PH',{month:'short',day:'numeric',year:'numeric'})}</td>
+      <td>
+        <button class="action-btn primary" onclick="openModal(${r.id})">Edit</button>
+        <button class="action-btn danger" onclick="deleteReport(${r.id},'${r.ref_code}')">Del</button>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function changePage(dir){ page=Math.max(0,page+dir); renderTable(); }
+
+function debounceSearch(){ clearTimeout(searchTimer); searchTimer=setTimeout(()=>{page=0;loadData();},350); }
+
+function openModal(id) {
+  const r=allData.find(x=>x.id===id);
+  if(!r)return;
+  const overlay=document.getElementById('modal');
+  document.getElementById('modal-content').innerHTML=`
+    <h3>Edit Report — <span style="font-family:'Space Grotesk',monospace;color:var(--or)">${r.ref_code}</span></h3>
+    ${r.photo_path?`<img class="modal-photo" src="/uploads/${r.photo_path}" alt="Pothole photo">`:''}
+    <div class="modal-field"><label>Address</label><div class="val">${r.address}</div></div>
+    ${r.landmark?`<div class="modal-field"><label>Landmark</label><div class="val">📍 ${r.landmark}</div></div>`:''}
+    ${r.description?`<div class="modal-field"><label>Description</label><div class="val" style="color:var(--muted)">${r.description}</div></div>`:''}
+    ${r.latitude?`<div class="modal-field"><label>Coordinates</label><div class="val" style="font-family:'Space Grotesk',monospace">${r.latitude}, ${r.longitude}</div><a class="map-link" href="https://www.google.com/maps?q=${r.latitude},${r.longitude}" target="_blank">↗ Open in Google Maps</a></div>`:''}
+    <div class="modal-field"><label>Reporter</label><div class="val">${r.reporter_name}${r.reporter_contact?' · '+r.reporter_contact:''}</div></div>
+    <div class="modal-field"><label>Update Status</label>
+      <select id="m-status">
+        <option value="pending" ${r.status==='pending'?'selected':''}>Pending</option>
+        <option value="in_progress" ${r.status==='in_progress'?'selected':''}>In Progress</option>
+        <option value="resolved" ${r.status==='resolved'?'selected':''}>Resolved</option>
+      </select>
+    </div>
+    <div class="modal-field"><label>Admin Notes</label>
+      <textarea id="m-notes" placeholder="e.g. Repair crew scheduled for Friday...">${r.admin_notes||''}</textarea>
+    </div>
+    <div class="modal-field">
+      <div class="check-row">
+        <input type="checkbox" id="m-verified" ${r.is_verified?'checked':''}>
+        <label for="m-verified">Mark as Verified (report confirmed by admin)</label>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="action-btn" onclick="closeModal()">Cancel</button>
+      <button class="action-btn primary" onclick="saveReport(${r.id})">Save Changes</button>
+    </div>
+  `;
+  overlay.classList.add('open');
+}
+
+function closeModal(){ document.getElementById('modal').classList.remove('open'); }
+document.getElementById('modal').addEventListener('click',e=>{ if(e.target===e.currentTarget)closeModal(); });
+
+async function saveReport(id) {
+  const status=document.getElementById('m-status').value;
+  const notes=document.getElementById('m-notes').value.trim();
+  const verified=document.getElementById('m-verified').checked;
+  try {
+    const res=await fetch(`${API}/api/admin/reports/${id}`,{
+      method:'PATCH',headers:{'Content-Type':'application/json',Authorization:`Bearer ${token}`},
+      body:JSON.stringify({status,admin_notes:notes,is_verified:verified})
+    });
+    if(!res.ok)throw new Error('Save failed');
+    closeModal(); await loadData(); loadStats();
+  } catch(e){alert('Failed to save: '+e.message);}
+}
+
+async function deleteReport(id,ref) {
+  if(!confirm(`Delete report ${ref}? This cannot be undone.`))return;
+  try {
+    const res=await fetch(`${API}/api/admin/reports/${id}`,{method:'DELETE',headers:{Authorization:`Bearer ${token}`}});
+    if(!res.ok)throw new Error('Delete failed');
+    await loadData(); loadStats();
+  } catch(e){alert('Failed to delete: '+e.message);}
+}
+</script>
+</body>
+</html>
