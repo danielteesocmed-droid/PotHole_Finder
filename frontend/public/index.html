@@ -1,0 +1,607 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>PotHole Finder — Report Road Damage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600&family=Space+Grotesk:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --or:#E8510A;--or-dk:#C94408;--or-lt:#FEF0E8;
+  --bg:#F7F6F3;--surface:#FFFFFF;--border:#E5E3DE;
+  --text:#1C1B18;--muted:#7A7770;--hint:#B0ADA7;
+  --success:#0A6E3F;--success-bg:#ECFDF5;
+  --danger:#991B1B;--danger-bg:#FEF2F2;
+  --warn:#92400E;--warn-bg:#FFFBEB;
+  --info:#1D4ED8;--info-bg:#EFF6FF;
+  --radius:12px;--radius-sm:8px;
+  --shadow:0 1px 3px rgba(0,0,0,0.08),0 4px 12px rgba(0,0,0,0.06);
+}
+body{font-family:'Plus Jakarta Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;font-size:15px}
+.app{max-width:480px;margin:0 auto;min-height:100vh;background:var(--bg);position:relative}
+
+/* TOPBAR */
+.topbar{background:var(--or);padding:16px 18px 14px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:100}
+.topbar-logo{width:38px;height:38px;background:rgba(255,255,255,0.18);border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.topbar-text h1{font-size:17px;font-weight:600;color:#fff;letter-spacing:-0.3px}
+.topbar-text p{font-size:11px;color:rgba(255,255,255,0.8);margin-top:1px}
+
+/* TABS */
+.tabs{display:flex;background:var(--surface);border-bottom:1.5px solid var(--border);position:sticky;top:66px;z-index:99}
+.tab{flex:1;padding:13px 8px;font-size:13px;font-weight:500;text-align:center;color:var(--muted);cursor:pointer;border-bottom:2.5px solid transparent;transition:all 0.2s;position:relative;top:1.5px}
+.tab.active{color:var(--or);border-bottom-color:var(--or)}
+
+/* PANELS */
+.panel{display:none;padding:16px;padding-bottom:32px}
+.panel.active{display:block}
+
+/* SECTION */
+.sec-label{font-size:10.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:0.8px;margin-bottom:8px}
+
+/* CARD */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px;margin-bottom:14px}
+
+/* TIP */
+.tip{background:var(--or-lt);border-left:3px solid var(--or);border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:11px 14px;margin-bottom:14px;font-size:12.5px;color:#7C3A0A;line-height:1.55}
+.tip strong{font-weight:600}
+
+/* PHOTO UPLOAD */
+.photo-zone{border:2px dashed var(--border);border-radius:var(--radius);padding:28px 16px;text-align:center;cursor:pointer;position:relative;overflow:hidden;margin-bottom:14px;transition:border-color 0.2s,background 0.2s;background:var(--surface)}
+.photo-zone:hover,.photo-zone:active{border-color:var(--or);background:var(--or-lt)}
+.photo-zone input{position:absolute;inset:0;opacity:0;cursor:pointer;width:100%;height:100%}
+.photo-zone-icon{width:44px;height:44px;background:var(--or-lt);border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 10px}
+.photo-zone p{font-size:13.5px;font-weight:500;color:var(--text)}
+.photo-zone small{font-size:11.5px;color:var(--muted);margin-top:3px;display:block}
+.photo-preview-wrap{display:none;position:relative;margin-bottom:14px;border-radius:var(--radius);overflow:hidden;background:var(--border)}
+.photo-preview-wrap img{width:100%;max-height:220px;object-fit:cover;display:block}
+.remove-photo{position:absolute;top:8px;right:8px;background:rgba(0,0,0,0.55);border:none;border-radius:50%;width:28px;height:28px;color:#fff;font-size:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)}
+
+/* FORM */
+.field{margin-bottom:14px}
+.field label{font-size:13px;font-weight:500;color:var(--text);display:block;margin-bottom:5px}
+.field label .opt{font-weight:400;color:var(--muted)}
+input[type=text],input[type=tel],textarea,select{
+  width:100%;padding:10px 13px;font-size:14px;border:1px solid var(--border);
+  border-radius:var(--radius-sm);background:var(--surface);color:var(--text);
+  font-family:'Plus Jakarta Sans',sans-serif;outline:none;transition:border-color 0.2s
+}
+input[type=text]:focus,input[type=tel]:focus,textarea:focus{border-color:var(--or);box-shadow:0 0 0 3px rgba(232,81,10,0.1)}
+textarea{resize:vertical;min-height:78px;line-height:1.5}
+.loc-row{display:flex;gap:8px}
+.loc-row input{flex:1;font-family:'Space Grotesk',monospace;font-size:12px;background:#FAFAF9}
+.loc-btn{padding:10px 14px;background:var(--or);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:600;display:flex;align-items:center;gap:6px;flex-shrink:0;transition:background 0.2s}
+.loc-btn:hover{background:var(--or-dk)}
+.loc-btn:disabled{opacity:0.5;cursor:not-allowed}
+.loc-status{font-size:11.5px;color:var(--muted);margin-top:5px;min-height:16px;line-height:1.4}
+.loc-status.ok{color:var(--success)}
+.loc-status.err{color:var(--danger)}
+.char-count{font-size:11px;color:var(--hint);text-align:right;margin-top:-10px;margin-bottom:14px}
+
+/* SEVERITY */
+.sev-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.sev-btn{padding:12px 6px;border:1.5px solid var(--border);border-radius:var(--radius);cursor:pointer;text-align:center;background:var(--surface);transition:all 0.15s;user-select:none}
+.sev-icon{font-size:22px;margin-bottom:3px}
+.sev-label{font-size:12px;font-weight:600;color:var(--muted)}
+.sev-desc{font-size:10px;color:var(--hint);margin-top:1px}
+.sev-btn.sel-low{border-color:#F59E0B;background:#FFFBEB}.sev-btn.sel-low .sev-label{color:#92400E}
+.sev-btn.sel-medium{border-color:#F97316;background:#FFF7ED}.sev-btn.sel-medium .sev-label{color:#9A3412}
+.sev-btn.sel-high{border-color:#DC2626;background:#FEF2F2}.sev-btn.sel-high .sev-label{color:#991B1B}
+
+/* SUBMIT */
+.submit-btn{width:100%;padding:15px;background:var(--or);color:#fff;border:none;border-radius:var(--radius);font-size:15px;font-weight:600;cursor:pointer;transition:background 0.2s;letter-spacing:-0.2px}
+.submit-btn:hover{background:var(--or-dk)}
+.submit-btn:disabled{opacity:0.5;cursor:not-allowed}
+.submit-btn:active{transform:scale(0.99)}
+
+/* BANNER */
+.banner{display:none;border-radius:var(--radius-sm);padding:13px 15px;margin-bottom:14px;font-size:13.5px;align-items:flex-start;gap:10px;line-height:1.45}
+.banner.success{background:var(--success-bg);border:1px solid #6EE7B7;color:var(--success)}
+.banner.error{background:var(--danger-bg);border:1px solid #FCA5A5;color:var(--danger)}
+.banner-icon{flex-shrink:0;margin-top:1px}
+.ref-code{font-family:'Space Grotesk',monospace;font-size:15px;font-weight:600;letter-spacing:1px;margin-top:4px}
+
+/* REPORTS */
+.filter-row{display:flex;gap:6px;overflow-x:auto;padding-bottom:4px;margin-bottom:12px;-webkit-overflow-scrolling:touch}
+.filter-row::-webkit-scrollbar{display:none}
+.chip{padding:6px 14px;border:1px solid var(--border);border-radius:20px;font-size:12px;font-weight:500;cursor:pointer;white-space:nowrap;color:var(--muted);background:var(--surface);flex-shrink:0}
+.chip.active{background:var(--or);color:#fff;border-color:var(--or)}
+
+/* REPORT CARD */
+.rcard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;overflow:hidden;box-shadow:var(--shadow)}
+.rcard-img{width:100%;height:130px;object-fit:cover;background:#F0EDE8;display:flex;align-items:center;justify-content:center}
+.rcard-body{padding:13px}
+.rcard-meta{display:flex;align-items:center;gap:6px;margin-bottom:8px;flex-wrap:wrap}
+.badge{padding:3px 9px;border-radius:20px;font-size:10.5px;font-weight:600}
+.badge.high{background:var(--danger-bg);color:var(--danger)}
+.badge.medium{background:#FFEDD5;color:#9A3412}
+.badge.low{background:var(--warn-bg);color:var(--warn)}
+.badge.pending{background:#F1F0ED;color:var(--muted)}
+.badge.in_progress{background:var(--info-bg);color:var(--info)}
+.badge.resolved{background:var(--success-bg);color:var(--success)}
+.badge.verified{background:#F0FDF4;color:#166534}
+.rcard-addr{font-size:14px;font-weight:600;color:var(--text);margin-bottom:2px}
+.rcard-landmark{font-size:12px;color:var(--muted);margin-bottom:5px}
+.rcard-desc{font-size:12.5px;color:var(--muted);line-height:1.5;margin-bottom:7px}
+.rcard-foot{display:flex;align-items:center;justify-content:space-between;margin-top:4px}
+.rcard-coords{font-size:10.5px;color:var(--hint);font-family:'Space Grotesk',sans-serif}
+.rcard-time{font-size:10.5px;color:var(--hint)}
+.rcard-ref{font-size:10.5px;color:var(--or);font-family:'Space Grotesk',sans-serif;font-weight:500}
+
+/* STATS */
+.stats-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px}
+.scard{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px 10px;text-align:center}
+.scard-num{font-size:24px;font-weight:600;color:var(--text);font-family:'Space Grotesk',sans-serif}
+.scard-lbl{font-size:10.5px;color:var(--muted);margin-top:2px;font-weight:500}
+.scard.accent .scard-num{color:var(--or)}
+
+/* SEVERITY BARS */
+.sbar-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.sbar-lbl{width:72px;font-size:12px;color:var(--muted);font-weight:500}
+.sbar-track{flex:1;background:#F0EDE8;border-radius:4px;height:9px;overflow:hidden}
+.sbar-fill{height:100%;border-radius:4px;transition:width 0.6s cubic-bezier(0.34,1.56,0.64,1)}
+.sbar-count{font-size:12px;font-weight:600;min-width:24px;text-align:right;font-family:'Space Grotesk',sans-serif}
+
+/* ACTIVITY */
+.act-row{display:flex;align-items:flex-start;gap:10px;padding:9px 0;border-bottom:1px solid var(--border)}
+.act-dot{width:9px;height:9px;border-radius:50%;margin-top:5px;flex-shrink:0}
+.act-info{flex:1;min-width:0}
+.act-addr{font-size:13px;color:var(--text);font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.act-sub{font-size:11px;color:var(--muted)}
+.act-status{flex-shrink:0}
+
+/* TRACK */
+.track-form{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px;margin-bottom:14px}
+.track-row{display:flex;gap:8px}
+.track-row input{flex:1}
+.track-btn{padding:10px 16px;background:var(--or);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-weight:600;white-space:nowrap}
+.track-result{display:none;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:15px;margin-bottom:14px}
+
+/* EMPTY */
+.empty{text-align:center;padding:48px 16px;color:var(--muted)}
+.empty svg{margin:0 auto 12px;display:block;opacity:0.25}
+
+/* LOADING */
+.loading{text-align:center;padding:24px;color:var(--muted);font-size:13px}
+</style>
+</head>
+<body>
+<div class="app">
+  <!-- TOPBAR -->
+  <div class="topbar">
+    <div class="topbar-logo">
+      <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="10" r="3"/><path d="M12 2a8 8 0 0 0-8 8c0 5.4 8 14 8 14s8-8.6 8-14a8 8 0 0 0-8-8z"/></svg>
+    </div>
+    <div class="topbar-text">
+      <h1>PotHole Finder</h1>
+      <p>Report road damage · Help your community</p>
+    </div>
+  </div>
+
+  <!-- TABS -->
+  <div class="tabs">
+    <div class="tab active" onclick="switchTab('report')">Report</div>
+    <div class="tab" onclick="switchTab('reports')">Reports</div>
+    <div class="tab" onclick="switchTab('stats')">Stats</div>
+    <div class="tab" onclick="switchTab('track')">Track</div>
+  </div>
+
+  <!-- ── REPORT TAB ── -->
+  <div class="panel active" id="tab-report">
+    <div class="banner success" id="success-banner">
+      <div class="banner-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div>
+        Report submitted successfully! Our road crew will review it soon.
+        <div class="ref-code" id="ref-code-display"></div>
+        <div style="font-size:11px;margin-top:3px">Save your reference code to track the status</div>
+      </div>
+    </div>
+    <div class="banner error" id="error-banner">
+      <div class="banner-icon">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="9"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+      </div>
+      <div id="error-msg">Something went wrong. Please try again.</div>
+    </div>
+
+    <div class="tip"><strong>How to report:</strong> Take a clear photo, add a nearby landmark (store name, purok number, building), and tap GPS if possible. Even without GPS, a good landmark is enough for our crew to find it.</div>
+
+    <div class="sec-label">Photo of the pothole</div>
+    <div class="photo-zone" id="photo-zone" onclick="document.getElementById('photo-input').click()">
+      <input type="file" id="photo-input" accept="image/*" capture="environment" onchange="handlePhoto(event)">
+      <div class="photo-zone-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="var(--or)" stroke-width="2" stroke-linecap="round"><rect x="3" y="8" width="18" height="13" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><circle cx="12" cy="14" r="2.5"/></svg>
+      </div>
+      <p>Tap to take a photo or upload</p>
+      <small>Camera opens automatically on mobile</small>
+    </div>
+    <div class="photo-preview-wrap" id="photo-preview-wrap">
+      <img id="preview-img" src="" alt="Pothole photo">
+      <button class="remove-photo" onclick="removePhoto()" title="Remove photo">×</button>
+    </div>
+
+    <div class="sec-label">Location</div>
+    <div class="card">
+      <div class="field" style="margin-bottom:8px">
+        <label>GPS Coordinates</label>
+        <div class="loc-row">
+          <input type="text" id="lat-in" placeholder="Latitude" readonly>
+          <input type="text" id="lng-in" placeholder="Longitude" readonly>
+          <button class="loc-btn" id="gps-btn" onclick="getGPS()">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="3"/><path d="M12 2v3M12 19v3M2 12h3M19 12h3"/></svg>
+            GPS
+          </button>
+        </div>
+        <div class="loc-status" id="loc-status">GPS not yet detected — fill in the landmark below</div>
+      </div>
+      <div class="field" style="margin-bottom:8px">
+        <label>Street / Area <span class="opt">(type or paste)</span></label>
+        <input type="text" id="addr-in" placeholder="e.g. N. Bacalso Ave, Cebu City" required>
+      </div>
+      <div class="field" style="margin-bottom:0">
+        <label>Nearby landmark <span class="opt">(most important!)</span></label>
+        <input type="text" id="landmark-in" placeholder="e.g. Beside Jollibee Tabunok, across Shell gas station">
+      </div>
+    </div>
+
+    <div class="sec-label">Severity Level</div>
+    <div class="sev-grid">
+      <div class="sev-btn" onclick="setSev('low',this)">
+        <div class="sev-icon">🟡</div>
+        <div class="sev-label">Minor</div>
+        <div class="sev-desc">Small crack / dip</div>
+      </div>
+      <div class="sev-btn" onclick="setSev('medium',this)">
+        <div class="sev-icon">🟠</div>
+        <div class="sev-label">Moderate</div>
+        <div class="sev-desc">Visible hole</div>
+      </div>
+      <div class="sev-btn" onclick="setSev('high',this)">
+        <div class="sev-icon">🔴</div>
+        <div class="sev-label">Severe</div>
+        <div class="sev-desc">Deep / dangerous</div>
+      </div>
+    </div>
+
+    <div class="sec-label">More Details</div>
+    <div class="field">
+      <label>Description <span class="opt">(optional)</span></label>
+      <textarea id="desc-in" maxlength="300" placeholder="e.g. Large pothole in the left lane, approx 40cm wide. Very dangerous for motorcycles, especially at night." oninput="updateCC()"></textarea>
+      <div class="char-count" id="cc">0 / 300</div>
+    </div>
+    <div class="field">
+      <label>Your name <span class="opt">(optional)</span></label>
+      <input type="text" id="name-in" placeholder="Anonymous">
+    </div>
+    <div class="field">
+      <label>Contact number <span class="opt">(optional, for follow-up)</span></label>
+      <input type="tel" id="contact-in" placeholder="09XX XXX XXXX">
+    </div>
+
+    <button class="submit-btn" id="submit-btn" onclick="submitReport()">Submit Report</button>
+  </div>
+
+  <!-- ── REPORTS TAB ── -->
+  <div class="panel" id="tab-reports">
+    <div class="filter-row">
+      <div class="chip active" onclick="filterReports('all',this)">All</div>
+      <div class="chip" onclick="filterReports('high',this)">Severe</div>
+      <div class="chip" onclick="filterReports('medium',this)">Moderate</div>
+      <div class="chip" onclick="filterReports('low',this)">Minor</div>
+      <div class="chip" onclick="filterReports('pending',this)">Pending</div>
+      <div class="chip" onclick="filterReports('in_progress',this)">In Progress</div>
+      <div class="chip" onclick="filterReports('resolved',this)">Resolved</div>
+    </div>
+    <div id="reports-list"><div class="loading">Loading reports...</div></div>
+  </div>
+
+  <!-- ── STATS TAB ── -->
+  <div class="panel" id="tab-stats">
+    <div class="sec-label">Summary</div>
+    <div class="stats-grid" id="stats-grid">
+      <div class="scard"><div class="scard-num" id="s-total">—</div><div class="scard-lbl">Total Reports</div></div>
+      <div class="scard accent"><div class="scard-num" id="s-pending">—</div><div class="scard-lbl">Pending</div></div>
+      <div class="scard"><div class="scard-num" id="s-resolved">—</div><div class="scard-lbl">Resolved</div></div>
+    </div>
+    <div class="card">
+      <div class="sec-label" style="margin-bottom:12px">Severity breakdown</div>
+      <div id="sev-bars"></div>
+    </div>
+    <div class="card">
+      <div class="sec-label" style="margin-bottom:12px">Recent activity</div>
+      <div id="activity-list"><div class="loading" style="padding:8px 0">Loading...</div></div>
+    </div>
+  </div>
+
+  <!-- ── TRACK TAB ── -->
+  <div class="panel" id="tab-track">
+    <div class="tip">Enter the reference code you received when you submitted your report (e.g. <strong>PH-A1B2C3D</strong>).</div>
+    <div class="track-form">
+      <label style="font-size:13px;font-weight:500;display:block;margin-bottom:7px">Reference Code</label>
+      <div class="track-row">
+        <input type="text" id="track-input" placeholder="PH-XXXXXXX" style="text-transform:uppercase;font-family:'Space Grotesk',monospace;letter-spacing:1px">
+        <button class="track-btn" onclick="trackReport()">Track</button>
+      </div>
+    </div>
+    <div class="track-result" id="track-result"></div>
+  </div>
+</div>
+
+<script>
+const API = '';
+let selSev = '';
+let photoFile = null;
+let curFilter = 'all';
+
+function switchTab(t) {
+  document.querySelectorAll('.tab').forEach((el,i) => el.classList.toggle('active', ['report','reports','stats','track'][i]===t));
+  document.querySelectorAll('.panel').forEach(el => el.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  if(t==='reports') loadReports();
+  if(t==='stats') loadStats();
+}
+
+function handlePhoto(e) {
+  const file = e.target.files[0];
+  if(!file) return;
+  // Validate type
+  if(!file.type.startsWith('image/')) {
+    alert('Please select an image file (JPEG, PNG, or WEBP).');
+    e.target.value = ''; return;
+  }
+  // Validate size — 15 MB hard limit matching the server
+  if(file.size > 15 * 1024 * 1024) {
+    alert('Photo is too large. Maximum size is 15 MB. Please choose a smaller file or reduce the resolution.');
+    e.target.value = ''; return;
+  }
+  photoFile = file;
+  const url = URL.createObjectURL(photoFile);
+  document.getElementById('preview-img').src = url;
+  document.getElementById('photo-preview-wrap').style.display = 'block';
+  document.getElementById('photo-zone').style.display = 'none';
+}
+function removePhoto() {
+  photoFile = null;
+  document.getElementById('photo-input').value = '';
+  document.getElementById('photo-preview-wrap').style.display = 'none';
+  document.getElementById('photo-zone').style.display = 'block';
+}
+
+function getGPS() {
+  const btn = document.getElementById('gps-btn');
+  const st = document.getElementById('loc-status');
+  btn.disabled = true; btn.querySelector('svg').style.opacity='0.5';
+  st.textContent = 'Detecting your location...'; st.className = 'loc-status';
+  if(!navigator.geolocation){
+    st.textContent = 'GPS not supported. Please fill in the address and landmark.'; st.className='loc-status err';
+    btn.disabled=false; return;
+  }
+  navigator.geolocation.getCurrentPosition(pos=>{
+    document.getElementById('lat-in').value = pos.coords.latitude.toFixed(6);
+    document.getElementById('lng-in').value = pos.coords.longitude.toFixed(6);
+    st.textContent = `Location found! Accuracy: ~${Math.round(pos.coords.accuracy)}m`; st.className='loc-status ok';
+    btn.disabled=false; btn.querySelector('svg').style.opacity='1';
+  }, err=>{
+    const msgs = {1:'Location access denied. Please allow location in browser settings.',2:'Could not detect location. Fill in address and landmark.',3:'Location request timed out.'};
+    st.textContent = msgs[err.code]||'Location error. Fill in the landmark below.'; st.className='loc-status err';
+    btn.disabled=false; btn.querySelector('svg').style.opacity='1';
+  }, {timeout:12000, enableHighAccuracy:true});
+}
+
+function setSev(level, el) {
+  selSev = level;
+  document.querySelectorAll('.sev-btn').forEach(b=>b.className='sev-btn');
+  el.className = 'sev-btn sel-'+level;
+}
+
+function updateCC() {
+  document.getElementById('cc').textContent = document.getElementById('desc-in').value.length + ' / 300';
+}
+
+async function submitReport() {
+  const addr = document.getElementById('addr-in').value.trim();
+  const landmark = document.getElementById('landmark-in').value.trim();
+  if(!addr && !landmark) { showBanner('error','Please enter an address or landmark so our crew can find the pothole.'); return; }
+  if(!selSev) { showBanner('error','Please select a severity level.'); return; }
+
+  const btn = document.getElementById('submit-btn');
+  btn.disabled = true; btn.textContent = 'Submitting...';
+
+  const fd = new FormData();
+  fd.append('address', addr || '(No address provided)');
+  if(landmark) fd.append('landmark', landmark);
+  const lat = document.getElementById('lat-in').value;
+  const lng = document.getElementById('lng-in').value;
+  if(lat) fd.append('latitude', lat);
+  if(lng) fd.append('longitude', lng);
+  fd.append('severity', selSev);
+  const desc = document.getElementById('desc-in').value.trim();
+  if(desc) fd.append('description', desc);
+  fd.append('reporter_name', document.getElementById('name-in').value.trim() || 'Anonymous');
+  const contact = document.getElementById('contact-in').value.trim();
+  if(contact) fd.append('reporter_contact', contact);
+  if(photoFile) fd.append('photo', photoFile);
+
+  try {
+    const res = await fetch(API+'/api/reports', {method:'POST', body:fd});
+    const data = await res.json();
+    if(!res.ok) throw new Error(data.detail||'Server error');
+    document.getElementById('ref-code-display').textContent = data.ref_code;
+    showBanner('success');
+    resetForm();
+  } catch(err) {
+    showBanner('error', err.message || 'Failed to submit. Please check your connection.');
+  } finally {
+    btn.disabled=false; btn.textContent='Submit Report';
+  }
+}
+
+function showBanner(type, msg='') {
+  document.getElementById('success-banner').style.display='none';
+  document.getElementById('error-banner').style.display='none';
+  if(type==='success') { document.getElementById('success-banner').style.display='flex'; }
+  else { document.getElementById('error-msg').textContent=msg; document.getElementById('error-banner').style.display='flex'; }
+  window.scrollTo({top:0,behavior:'smooth'});
+  if(type==='success') setTimeout(()=>document.getElementById('success-banner').style.display='none', 8000);
+}
+
+function resetForm() {
+  document.getElementById('addr-in').value='';
+  document.getElementById('landmark-in').value='';
+  document.getElementById('lat-in').value='';
+  document.getElementById('lng-in').value='';
+  document.getElementById('desc-in').value='';
+  document.getElementById('name-in').value='';
+  document.getElementById('contact-in').value='';
+  document.getElementById('loc-status').textContent='GPS not yet detected — fill in the landmark below';
+  document.getElementById('loc-status').className='loc-status';
+  selSev=''; document.querySelectorAll('.sev-btn').forEach(b=>b.className='sev-btn');
+  removePhoto(); updateCC();
+}
+
+// REPORTS
+async function loadReports(sev, stat) {
+  const list = document.getElementById('reports-list');
+  list.innerHTML='<div class="loading">Loading...</div>';
+  try {
+    let url = API+'/api/reports?limit=60';
+    if(sev) url+=`&severity=${sev}`;
+    if(stat) url+=`&status=${stat}`;
+    const res = await fetch(url);
+    const data = await res.json();
+    const items = Array.isArray(data) ? data : (data.items || []);
+    const total = data.total ?? items.length;
+    renderReports(items, list, total);
+  } catch(e) { list.innerHTML='<div class="empty"><p>Failed to load reports.</p></div>'; }
+}
+
+function filterReports(f, el) {
+  curFilter=f;
+  document.querySelectorAll('.chip').forEach(c=>c.classList.remove('active'));
+  el.classList.add('active');
+  const sevs = ['low','medium','high'];
+  const stats = ['pending','in_progress','resolved'];
+  const sev = sevs.includes(f)?f:null;
+  const stat = stats.includes(f)?f:null;
+  loadReports(sev, stat);
+}
+
+const SEV_LABEL={low:'Minor',medium:'Moderate',high:'Severe'};
+const STAT_LABEL={pending:'Pending',in_progress:'In Progress',resolved:'Resolved'};
+
+function renderReports(data, list, total) {
+  if(total !== undefined && total > data.length) {
+    const note = document.createElement("div");
+    note.style = "font-size:12px;color:var(--muted);text-align:center;margin-bottom:8px";
+    note.textContent = `Showing ${data.length} of ${total} reports`;
+    list.prepend(note);
+  }
+  if(!data.length){ list.innerHTML='<div class="empty"><svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg><p>No reports found</p></div>'; return; }
+  list.innerHTML = data.map(r => `
+    <div class="rcard">
+      ${r.photo_path
+        ? `<img class="rcard-img" src="/uploads/${r.photo_path}" alt="Pothole photo" style="display:block" loading="lazy">`
+        : `<div class="rcard-img"><svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1"><rect x="3" y="8" width="18" height="13" rx="2"/><circle cx="12" cy="14" r="2.5"/></svg></div>`}
+      <div class="rcard-body">
+        <div class="rcard-meta">
+          <span class="badge ${r.severity}">${SEV_LABEL[r.severity]||r.severity}</span>
+          <span class="badge ${r.status}">${STAT_LABEL[r.status]||r.status}</span>
+          ${r.is_verified?'<span class="badge verified">✓ Verified</span>':''}
+        </div>
+        <div class="rcard-addr">${r.address}</div>
+        ${r.landmark?`<div class="rcard-landmark">📍 ${r.landmark}</div>`:''}
+        ${r.description?`<div class="rcard-desc">${r.description}</div>`:''}
+        ${r.admin_notes?`<div style="background:#EFF6FF;border-radius:6px;padding:8px 10px;font-size:12px;color:#1D4ED8;margin-bottom:6px"><strong>Admin note:</strong> ${r.admin_notes}</div>`:''}
+        <div class="rcard-foot">
+          <div>
+            <div class="rcard-ref">${r.ref_code}</div>
+            ${r.latitude?`<div class="rcard-coords">${parseFloat(r.latitude).toFixed(5)}, ${parseFloat(r.longitude).toFixed(5)}</div>`:'<div class="rcard-coords" style="color:var(--hint)">No GPS</div>'}
+          </div>
+          <div class="rcard-time">${new Date(r.created_at+'Z').toLocaleDateString('en-PH',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+        </div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// STATS
+async function loadStats() {
+  try {
+    const [statsRes, reportsRes] = await Promise.all([
+      fetch(API+'/api/stats'), fetch(API+'/api/reports?limit=8')
+    ]);
+    const stats = await statsRes.json();
+    const reportsData = await reportsRes.json();
+    const reports = Array.isArray(reportsData) ? reportsData : (reportsData.items || []);
+
+    document.getElementById('s-total').textContent = stats.total;
+    document.getElementById('s-pending').textContent = stats.pending;
+    document.getElementById('s-resolved').textContent = stats.resolved;
+
+    const t = stats.total || 1;
+    document.getElementById('sev-bars').innerHTML = [
+      ['Severe', stats.high, '#DC2626'],
+      ['Moderate', stats.medium, '#F97316'],
+      ['Minor', stats.low, '#F59E0B'],
+    ].map(([lbl,count,color])=>`
+      <div class="sbar-row">
+        <div class="sbar-lbl">${lbl}</div>
+        <div class="sbar-track"><div class="sbar-fill" style="width:${Math.round(count/t*100)}%;background:${color}"></div></div>
+        <div class="sbar-count">${count}</div>
+      </div>
+    `).join('');
+
+    document.getElementById('activity-list').innerHTML = reports.slice(0,6).map(r=>`
+      <div class="act-row">
+        <div class="act-dot" style="background:${r.severity==='high'?'#DC2626':r.severity==='medium'?'#F97316':'#F59E0B'}"></div>
+        <div class="act-info">
+          <div class="act-addr">${r.address}</div>
+          <div class="act-sub">${r.ref_code} · ${new Date(r.created_at+'Z').toLocaleDateString('en-PH',{month:'short',day:'numeric'})}</div>
+        </div>
+        <div class="act-status"><span class="badge ${r.status}">${STAT_LABEL[r.status]}</span></div>
+      </div>
+    `).join('') || '<p style="font-size:13px;color:var(--muted)">No reports yet</p>';
+  } catch(e) {}
+}
+
+// TRACK
+async function trackReport() {
+  const code = document.getElementById('track-input').value.trim().toUpperCase();
+  if(!code) return;
+  const result = document.getElementById('track-result');
+  result.style.display='block'; result.innerHTML='<div class="loading">Looking up report...</div>';
+  try {
+    const res = await fetch(API+'/api/reports/'+code);
+    if(res.status===404){result.innerHTML='<p style="color:var(--danger);font-size:13px">No report found with that code. Please check and try again.</p>'; return;}
+    const r = await res.json();
+    const progress = {pending:1, in_progress:2, resolved:3};
+    const p = progress[r.status]||1;
+    result.innerHTML = `
+      <div style="margin-bottom:12px">
+        <div style="font-size:13px;color:var(--muted);margin-bottom:2px">Reference Code</div>
+        <div style="font-family:'Space Grotesk',monospace;font-size:16px;font-weight:600;color:var(--or)">${r.ref_code}</div>
+      </div>
+      <div style="display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap">
+        <span class="badge ${r.severity}">${SEV_LABEL[r.severity]}</span>
+        <span class="badge ${r.status}">${STAT_LABEL[r.status]}</span>
+        ${r.is_verified?'<span class="badge verified">✓ Verified</span>':''}
+      </div>
+      <div style="margin-bottom:10px">
+        <div style="font-size:13px;font-weight:500">${r.address}</div>
+        ${r.landmark?`<div style="font-size:12px;color:var(--muted);margin-top:2px">📍 ${r.landmark}</div>`:''}
+      </div>
+      <div style="display:flex;gap:4px;margin-bottom:14px">
+        ${['Pending','In Progress','Resolved'].map((s,i)=>`
+          <div style="flex:1;padding:7px 4px;text-align:center;border-radius:6px;font-size:11px;font-weight:600;background:${i<p?'var(--or)':'#F0EDE8'};color:${i<p?'#fff':'var(--muted)'}">${s}</div>
+        `).join('')}
+      </div>
+      ${r.admin_notes?`<div style="background:#EFF6FF;border-radius:8px;padding:10px 12px;font-size:12.5px;color:#1D4ED8"><strong>Note from admin:</strong> ${r.admin_notes}</div>`:''}
+      <div style="font-size:11px;color:var(--hint);margin-top:10px">Submitted: ${new Date(r.created_at+'Z').toLocaleString('en-PH')}</div>
+    `;
+  } catch(e) { result.innerHTML='<p style="color:var(--danger);font-size:13px">Error looking up report. Please try again.</p>'; }
+}
+</script>
+</body>
+</html>
